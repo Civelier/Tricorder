@@ -112,3 +112,5 @@ class EventQueue:
             return call
         return hook
 
+eventManager = EventQueue()
+

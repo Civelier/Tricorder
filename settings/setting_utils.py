@@ -184,4 +184,4 @@ def test_val1():
     print(f"Value: {dat.val1}")
 
 
-test_val1()
+# test_val1()

@@ -7,6 +7,10 @@ import cv2
 from PIL import Image, ImageTk
 import tkinter as tk
 
+import msgs
+
+msg = msgs.Messages("Widgets/graphics")
+
 IMAGES_PATH="images"
 
 class BtnStyle(Enum):
@@ -191,7 +195,11 @@ class BtnInfo:
         return BG_COLORS[self.color]
 
     def with_size(self, size:Tuple[int,int]):
-        img = Image.open(self.path)
-        resized = img.resize(size)
-        resized.save(self.save_path(size))
-        return tk.PhotoImage(file=self.save_path(size))
+        try:
+            img = Image.open(self.path)
+            resized = img.resize(size)
+            resized.save(self.save_path(size))
+            return tk.PhotoImage(file=self.save_path(size))
+        except FileNotFoundError as e:
+            msg.error("Icons not found", f"Did you forget to download the icons? Place them in 'Tricorder/images'.\n\n{e}", as_event=True)
+            return None

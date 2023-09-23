@@ -16,9 +16,9 @@ PluginsBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.ViewGrid, BtnColor.Orange)
 
 
 def main():
+    from utils import eventManager
     root = tk.Tk()
-    eventManager = EventQueue()
-    root.overrideredirect(True)
+    # root.overrideredirect(True)
     max_width = root.winfo_screenwidth()
     max_height = root.winfo_screenheight()
     root.geometry("{0}x{1}+0+0".format(max_width, max_height))
