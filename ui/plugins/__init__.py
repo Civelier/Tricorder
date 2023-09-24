@@ -17,6 +17,7 @@ def load():
         if module.is_dir() and module.name != '__pycache__':
             md = importlib.import_module(f'.{module.name}', __name__)
             Plugins.append(md)
-            EntryPoints.append((md.PLUGIN_INFO, md.ENTRY_POINT))
+            if not md.PLUGIN_INFO.settings.hidden:
+                EntryPoints.append((md.PLUGIN_INFO, md.ENTRY_POINT))
 
 

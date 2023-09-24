@@ -9,7 +9,7 @@ import tkinter as tk
 
 import msgs
 
-msg = msgs.Messages("Widgets/graphics")
+msg = msgs.Messages("")
 
 IMAGES_PATH="images"
 

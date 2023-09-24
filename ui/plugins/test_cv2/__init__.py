@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import settings
 from ui.plugin import ClosingHandler, PluginInfo, Plugin
 from utils import EventInfo, EventQueue
 from widgets.funky_btn import FunkyButton
@@ -39,6 +40,9 @@ class TestCV2Plugin(Plugin):
         self.mainFrame.pack(side='top')
         self.mainFrame.pack_propagate(False)
 
+class TestCV2Settings(settings.PluginSettings):
+    def __init__(self):
+        super().__init__("TestCV2")
 
-PLUGIN_INFO = PluginInfo("Test CV2", BtnInfo(BtnStyle.Style2, BtnShape.BubbleBigText, BtnColor.DarkGray))
+PLUGIN_INFO = PluginInfo("Test CV2", BtnInfo(BtnStyle.Style2, BtnShape.BubbleBigText, BtnColor.DarkGray), TestCV2Settings())
 ENTRY_POINT = TestCV2Plugin

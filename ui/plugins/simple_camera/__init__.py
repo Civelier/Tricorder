@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import settings
 from ui.plugin import ClosingHandler, PluginInfo, Plugin
 from utils import EventInfo, EventQueue
 from widgets.funky_btn import FunkyButton
@@ -97,5 +98,9 @@ class SimpleCameraPlugin(Plugin):
             info.exit()
             self.back()
 
-PLUGIN_INFO = PluginInfo("Simple camera", BtnInfo(BtnStyle.Style2, BtnShape.Camera, BtnColor.Green))
+class SimpleCameraSettings(settings.PluginSettings):
+    def __init__(self):
+        super().__init__("SimpleCamera")
+
+PLUGIN_INFO = PluginInfo("Simple camera", BtnInfo(BtnStyle.Style2, BtnShape.Camera, BtnColor.Green), SimpleCameraSettings())
 ENTRY_POINT = SimpleCameraPlugin

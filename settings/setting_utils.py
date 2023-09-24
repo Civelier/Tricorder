@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Any, Callable, Union
 import toml
 
+import msgs
+
 BaseType = Union[str, bool, int, float]
 
 PLUGINS_PATH = Path("ui/plugins")
@@ -11,6 +13,8 @@ DEVICES_PATH = Path("devices")
 DEVICES_SETTINGS_PATH = Path("settings/devices")
 
 COMMON_SETTINGS_PATH = Path("settings/common")
+
+msg = msgs.Messages("Settings")
 
 
 def set_at_category(d:dict, category:str, name:str, value):
@@ -82,6 +86,7 @@ class Settings:
         name = parts[-1]
         parts.remove(name)
         cat = '.'.join(parts)
+        msg.info(f"{self.path}")
         return get_at_category(self.properties[fullname].default, self.cache, cat, name)
     
     def set(self, fullname:str, val:BaseType):
@@ -147,6 +152,14 @@ class PluginSettings(Settings):
         self.pluginName = pluginName
         super().__init__(PLUGINS_SETTINGS_PATH.joinpath(f'{pluginName}/active.toml'))
         self.load()
+
+    @property
+    @setting(False, 'plugin', 'hidden')
+    def hidden(self) -> bool:
+        return self.get('plugin.hidden')
+    @hidden.setter
+    def hidden(self, val:bool):
+        self.set('plugin.hidden', val)
     
 class DeviceSettings(Settings):
     def __init__(self, deviceName:str):
@@ -163,6 +176,7 @@ class CommonSettings(Settings):
 class test_data(CommonSettings):
     def __init__(self):
         super().__init__('TestData')
+        
     
     @property
     @setting(1, 'base', 'val1')

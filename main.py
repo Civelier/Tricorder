@@ -12,9 +12,6 @@ SettingsBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.Cog, BtnColor.Blue)
 ExitBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.Multiply, BtnColor.Red)
 PluginsBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.ViewGrid, BtnColor.Orange)
 
-
-
-
 def main():
     from utils import eventManager
     root = tk.Tk()
@@ -22,15 +19,6 @@ def main():
     max_width = root.winfo_screenwidth()
     max_height = root.winfo_screenheight()
     root.geometry("{0}x{1}+0+0".format(max_width, max_height))
-
-    # home0 = FunkyButton(RedHomeBtn, 50, 8, root, text="Home0")
-    # home0.place(x=0, y=0, anchor=tk.NW)
-
-    # home1 = FunkyButton(RedHomeBtn, 70, 10, root, text="Home1")
-    # home1.place(x=50, y=0, anchor=tk.NW)
-
-    # home2 = FunkyButton(RedHomeBtn, 90, 12, root, text="Home2")
-    # home2.place(x=0, y=70, anchor=tk.NW)
 
     def populate_plugins(grid:WiiGrid):
         from ui.plugins import EntryPoints

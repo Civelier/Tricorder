@@ -2,12 +2,15 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from utils import EventQueue
 from widgets import *
-
+import msgs
+from settings import PluginSettings
 
 class PluginInfo:
-    def __init__(self, name:str, style:BtnInfo):
+    def __init__(self, name:str, style:BtnInfo, settings:PluginSettings):
         self.name = name
         self.style = style
+        self.msg = msgs.Messages(name)
+        self.settings = settings
 
 class ClosingHandler:
     def __init__(self):
