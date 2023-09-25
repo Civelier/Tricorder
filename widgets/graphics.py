@@ -3,7 +3,6 @@ from pathlib import Path
 from enum import Enum
 from time import sleep
 from typing import Tuple
-import cv2
 from PIL import Image, ImageTk
 import tkinter as tk
 

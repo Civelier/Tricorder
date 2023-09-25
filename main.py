@@ -6,16 +6,19 @@ from utils import EventInfo, EventQueue, ScheduledCallback
 from widgets.wii_grid import WiiGridElement
 from ui.plugins import load as load_plugins
 import settings
+from common_settings import BaseSettings
 
 RedHomeBtn = BtnInfo(BtnStyle.Style2, BtnShape.Camera, BtnColor.Blue)
 SettingsBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.Cog, BtnColor.Blue)
 ExitBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.Multiply, BtnColor.Red)
 PluginsBtnInfo = BtnInfo(BtnStyle.Style2, BtnShape.ViewGrid, BtnColor.Orange)
 
+CommonSettings = BaseSettings()
+
 def main():
     from utils import eventManager
     root = tk.Tk()
-    # root.overrideredirect(True)
+    root.overrideredirect(True)
     max_width = root.winfo_screenwidth()
     max_height = root.winfo_screenheight()
     root.geometry("{0}x{1}+0+0".format(max_width, max_height))
@@ -36,6 +39,23 @@ def main():
             pl, ep = x
             pl:PluginInfo
             grid.add_button(pl.style, pl.name, show_plugin(ep))
+
+    def populate_settings(propertylist):
+        from ui.plugins import EntryPoints
+        load_plugins()
+
+        # Create plugin btn command
+        def show_plugin(ep:Type):
+            def show():
+                entrypoint:Plugin = ep(root, eventManager, width=max_width, height=max_height)
+                entrypoint.place(x=0,y=0,width=max_width,height=max_height)
+
+            return show
+
+        for x in EntryPoints:
+            pl, ep = x
+            pl:PluginInfo
+            # grid.add_button(pl.style, pl.name, show_plugin(ep))
 
     
     

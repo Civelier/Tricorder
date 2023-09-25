@@ -8,27 +8,20 @@ from widgets.graphics import *
 import cv2
 from PIL import Image, ImageTk
 
-"""
-"nvarguscamerasrc sensor-id=%d ! "
-        "video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=(fraction)%d/1 ! "
-        "nvvidconv flip-method=%d ! "
-        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
-        "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
-        """
-
+METHOD1 = """nvarguscamerasrc sensor-id=%d ! video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"""
+METHOD2 = """nvarguscamerasrc sensor-id=%d ! video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, format=(string)NV12, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! video/x-raw, width=(int)%d, height=(int)%d, , format=(string)BGRx ! videoconvert"""
 
 def gstreamer_pipeline(
     sensor_id=0,
-    capture_width=1920,
-    capture_height=1080,
+    capture_width=1280,
+    capture_height=120,
     display_width=960,
     display_height=540,
     framerate=30,
     flip_method=0,
 ):
     return (
-        """nvarguscamerasrc sensor-id=%d ! video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, format=(string)NV12, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! video/x-raw, width=(int)%d, height=(int)%d, , format=(string)BGRx ! videoconvert"""
+        METHOD1
         % (
             sensor_id,
             capture_width,
@@ -94,7 +87,7 @@ class SimpleCameraPlugin(Plugin):
                 info.exit()
                 self.back()
         else:
-            print("Error: Unable to open camera")
+            PLUGIN_INFO.msg.error("Camera error", "Unable to open camera.")
             info.exit()
             self.back()
 
