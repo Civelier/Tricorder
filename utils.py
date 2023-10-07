@@ -7,51 +7,42 @@ class StopWatch:
     def __init__(self):
         self.start = 0
         self.end = 0
-        self.init = time.time_ns()
+        self.init = time.time()
 
     def __enter__(self):
-        self.start = time.time_ns()
+        self.start = time.time()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.end = time.time_ns()
+        self.end = time.time()
 
-    @property
-    def total_elapsed_ns(self):
-        return self.init - time.time_ns()
-
-    @property
-    def elapsed_ns(self):
-        return self.start - time.time_ns()
-    
     @property
     def total_elapsed(self):
-        return (self.init - time.time_ns()) / 1000000000
+        return (self.init - time.time())
 
     @property
     def elapsed(self):
-        return (self.start - time.time_ns()) / 1000000000
+        return (self.start - time.time())
     
 
 class EventInfo:
     def __init__(self):
-        self.ns = 0
+        self.seconds = 0
         self.nextrun = 0
         self.repeat = False
     
     def skip_time(self, seconds:float):
-        self.nextrun = int(seconds*1000000000)
+        self.nextrun = time.time() + seconds
     
     def repeat_every(self, seconds:float):
-        ns = int(seconds * 1000000000)
-        if not self.repeat or self.ns != ns:
+        if not self.repeat or self.seconds != seconds:
             self.repeat = True
-            self.nextrun = time.time_ns() + ns
-            self.ns = ns
+            self.nextrun = time.time() + seconds
+            self.seconds = seconds
 
     def exit(self):
         self.repeat = False
-        self.ns = 0
+        self.seconds = 0
         self.nextrun = 0
     
     def update(self):
@@ -63,10 +54,10 @@ class EventInfo:
             # offest = 10 % 3 = 1
             # nextrun = 10 - 1 + 3 = 12
 
-            now = time.time_ns()
+            now = time.time()
             # To catch up while debugging
-            offset = (now - self.nextrun) % self.ns
-            self.nextrun = now - offset + self.ns
+            offset = (now - self.nextrun) % self.seconds
+            self.nextrun = now - offset + self.seconds
 
 ScheduledCallback = Callable[[EventInfo],None]
 
@@ -83,7 +74,7 @@ class EventQueue:
                 info:EventInfo
                 func:ScheduledCallback
                 
-                if info.nextrun <= time.time_ns():
+                if info.nextrun <= time.time():
                     info.nextrun = 0
                     func(info)
                     if info.repeat or info.nextrun != 0:

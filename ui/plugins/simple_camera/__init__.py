@@ -8,29 +8,39 @@ from widgets.graphics import *
 import cv2
 from PIL import Image, ImageTk
 
+
+class SimpleCameraSettings(settings.PluginSettings):
+    def __init__(self):
+        super().__init__("SimpleCamera")
+
+PLUGIN_INFO = PluginInfo("Simple camera", BtnInfo(BtnStyle.Style2, BtnShape.Camera, BtnColor.Green), SimpleCameraSettings())
+
+PLUGIN_INFO.msg.info(cv2.getBuildInformation())
+
 METHOD1 = """nvarguscamerasrc sensor-id=%d ! video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink"""
 METHOD2 = """nvarguscamerasrc sensor-id=%d ! video/x-raw(memory:NVMM), width=(int)%d, height=(int)%d, format=(string)NV12, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! video/x-raw, width=(int)%d, height=(int)%d, , format=(string)BGRx ! videoconvert"""
+METHOD3 = "nvarguscamerasrc ! video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080,format=(string)NV12, framerate=(fraction)30/1 ! nvvidconv ! video/x-raw, format=(string)I420 ! appsink"
 
 def gstreamer_pipeline(
     sensor_id=0,
     capture_width=1280,
-    capture_height=120,
+    capture_height=720,
     display_width=960,
     display_height=540,
     framerate=30,
     flip_method=0,
 ):
     return (
-        METHOD1
-        % (
-            sensor_id,
-            capture_width,
-            capture_height,
-            framerate,
-            flip_method,
-            display_width,
-            display_height,
-        )
+        METHOD3
+        # % (
+        #     sensor_id,
+        #     capture_width,
+        #     capture_height,
+        #     framerate,
+        #     flip_method,
+        #     display_width,
+        #     display_height,
+        # )
     )
 
 class SimpleCameraPlugin(Plugin):
@@ -91,9 +101,4 @@ class SimpleCameraPlugin(Plugin):
             info.exit()
             self.back()
 
-class SimpleCameraSettings(settings.PluginSettings):
-    def __init__(self):
-        super().__init__("SimpleCamera")
-
-PLUGIN_INFO = PluginInfo("Simple camera", BtnInfo(BtnStyle.Style2, BtnShape.Camera, BtnColor.Green), SimpleCameraSettings())
 ENTRY_POINT = SimpleCameraPlugin

@@ -9,4 +9,4 @@ class BaseSettings(settings.CommonSettings):
                    WARNING : 'warning',
                    ERROR : 'error',
                    CRITICAL : 'critical'}
-        BaseSettings.debugLevel = self.create_combo_property('base.debugLevel', 'Info', options)
+        BaseSettings.debugLevel = self.create_property('base.debugLevel', 'debugLevel', 'Info')

@@ -1,8 +1,11 @@
+from email.policy import default
 from pathlib import Path
 from typing import Any, Callable, Union, Dict
 import toml
+import mvvm
 
 import msgs
+from mvvm.models.model import ModelItem, PropertyChangedEventArgs
 
 BaseType = Union[str, bool, int, float]
 
@@ -78,51 +81,85 @@ def get_at_category(default:BaseType, d:dict, category:str, name:str):
         d[cat] = {}
     return get_at_category(default, d[cat], '.'.join(categories), name)
 
-class Settings:
+class Settings(mvvm.ModelBase):
     NOT_INITIALIZED = 0
     INITIALIZING = 1
     INITIALIZED = 2
     def __init__(self, path:Path):
+        super().__init__()
         self.path = path
         self.cache = {}
-        self.properties = {}
+        self.properties:Dict[str, ModelItem] = {}
         self._state = Settings.NOT_INITIALIZED
+        self.propertyChanged:mvvm.Event[Settings, PropertyChangedEventArgs] = mvvm.Event()
     
-    def create_simple_property(self, fullname:str, default:BaseType, *, isPublic:bool=True, isReadonly:bool=False, onUpdate:Callable[[BaseType],None]=None):
-        cat, name = fullname_to_cat_name(fullname)
-        s = setting(default, cat, name, self, isPublic, isReadonly)
+    def on_property_changed(self, name:str, oldValue, newValue):
+        self.propertyChanged(self, mvvm.PropertyChangedEventArgs(name, oldValue, newValue))
+        self.updated(self, mvvm.ModelUpdatedEventArgs())
+    
+    def bind_property(self, m1, m2):
+        m1:mvvm.ModelItem
+        m2:mvvm.ModelItem
+        binder = mvvm.Binder(m1, m2)
+        binder.bind()
+    
+    def bind_all(self, other):
+        other:mvvm.Model
+        for prop in self.properties.values():
+            self.bind_property(prop, other.properties[prop.name])
+            
+    def unbind(self, item):
+        item:mvvm.ModelItem
+        item.unbind()
+        
+    def unbind_all(self):
+        for prop in self.properties.values():
+            prop.unbind()
+    
+    def create_property(self, name:str, fullname:str, default:BaseType, *, isPublic:bool=True, isReadonly:bool=False):
+        s = setting(default, name, fullname, self, isPublic=isPublic, isReadonly=isReadonly)
         s.add_to_parent()
-        if hasattr(self, name):
-            return getattr(self, name)
-        prop = property(lambda self: self.get(fullname), lambda self, value: self.set(fullname, value))
+        
+        setattr(self, f'_{s.name}_notify', None)
+        # If the property is already attached, get the 
+        if hasattr(self, s.name):
+            return getattr(self, s.name)
+        def setter(slf:Settings, value):
+            old = slf.get(fullname)
+            if old != value:
+                slf.set(fullname, value)
+                getattr(slf, f'_{name}_notify', value)(slf, value)
+                slf.on_property_changed(s.name, old, value)
+        
+        prop = property(lambda self: self.get(fullname), setter)
         return prop
         
-    def create_combo_property(self, fullname:str, default:BaseType, options:Dict[Union[str, int], BaseType], *, isPublic:bool=True, isReadonly:bool=False, fget:Callable[[],BaseType]=None, fset:Callable[[BaseType],None]=None):
-        cat, name = fullname_to_cat_name(fullname)
-        s = setting(default, cat, name, self, isPublic, isReadonly, combo=options)
-        s.add_to_parent()
-        if hasattr(self, name):
-            return getattr(self, name)
-        prop = property(lambda self: self.get(fullname), lambda self, value: self.set(fullname, value))
-        return prop
-
     def reset_defaults(self):
         for k, v in self.properties.items():
             v:setting
             self.set(k, v.default)
     
     def get(self, fullname:str):
+        cat, name = fullname_to_cat_name(fullname)
+        old = get_at_category(self.properties[fullname].default, self.cache, cat, name)
         self.load()
-        parts = fullname.split('.')
-        name = parts[-1]
-        parts.remove(name)
-        cat = '.'.join(parts)
-        return get_at_category(self.properties[fullname].default, self.cache, cat, name)
+        val = get_at_category(self.properties[fullname].default, self.cache, cat, name)
+        if old != val:
+            self.set(fullname, val)
+        return val
     
     def set(self, fullname:str, val:BaseType):
         cat, name = fullname_to_cat_name(fullname)
-        self.cache = set_at_category(self.cache, cat, name, val)
-        self.save()
+        
+        # Get property info
+        s = self.properties[fullname]
+        
+        # Get old value
+        old = get_at_category(s.default, self.cache, cat, name)
+        if old != val:
+            self.cache = set_at_category(self.cache, cat, name, val)
+            self.save()
+            self.on_property_changed(s.name, old, val)
     
     def load(self):
         if not self.path.exists() and self._state == self.NOT_INITIALIZED:
@@ -149,39 +186,34 @@ class Settings:
             toml.dump(self.cache, wr)
             self._state = self.INITIALIZED
 
-class setting:
+class setting(ModelItem):
     def __init__(
         self,
         fdefault:BaseType,
-        category:str,
         name:str,
+        fullname:str,
         parent:Settings,
+        *,
         isPublic:bool=True,
         isReadonly:bool=False,
-        combo:Dict[Union[str,int],BaseType]=None,
     ):
-        self.isPublic = isPublic
-        self.isReadonly = isReadonly
-        self.parent:Settings = None
-        self.category = category
-        self.default = fdefault
-        self.name = name
-        self.parent = parent
-        self.combo = combo
+        super().__init__(fdefault, name, parent, isPublic=isPublic, isReadonly=isReadonly)
+        self.fullname = fullname
+        self.parent:Settings
 
     def add_to_parent(self):
-        self.parent.properties[f'{self.category}.{self.name}'] = self
-        fullname = '.'.join([self.category, self.name])
-        v = get_at_category(None, self.parent.cache, self.category, self.name)
+        cat, name = fullname_to_cat_name(self.fullname)
+        self.parent.properties[self.fullname] = self
+        v = get_at_category(None, self.parent.cache, cat, name)
         if v == None:
-            self.parent.set(fullname, self.default)
+            self.parent.set(self.fullname, self.default)
 
 class PluginSettings(Settings):
     def __init__(self, pluginName:str):
         self.pluginName = pluginName
         super().__init__(PLUGINS_SETTINGS_PATH.joinpath(f'{pluginName}/active.toml'))
-        PluginSettings.hidden = self.create_simple_property('plugin.hidden', False)
-        PluginSettings.version = self.create_simple_property('plugin.version', '1.0', isReadonly=True)
+        PluginSettings.hidden = self.create_property('plugin.hidden', 'hidden', False)
+        PluginSettings.version = self.create_property('plugin.version', 'version', '1.0', isReadonly=True)
 
 class DeviceSettings(Settings):
     def __init__(self, deviceName:str):
@@ -198,9 +230,13 @@ class CommonSettings(Settings):
 class test_data(CommonSettings):
     def __init__(self):
         super().__init__('TestData')
-        test_data.val1 = self.create_simple_property('base.val1', 4)
+        test_data.val1 = self.create_property('val1', 'base.val1', 4)
         self.load()
     
+class test_model(mvvm.Model):
+    def __init__(self):
+        super().__init__()
+        test_model.val1 = self.create_property('val1', 4)
 
 def test_val1():
     dat = test_data()
@@ -213,5 +249,20 @@ def test_val1():
     dat.val1 = int(val)
     print(f"Value: {dat.val1}")
 
+def test_bind():
+    dat = test_data()
+    modl = test_model()
+    
+    dat.bind_all(modl)
+    
+    dat.load()
+    dat.save()
 
+    print(f"dat: {dat.val1}\tmodl: {modl.val1}")
+    dat.val1 += 1
+    print(f"dat: {dat.val1}\tmodl: {modl.val1}")
+    modl.val1 += 5
+    print(f"dat: {dat.val1}\tmodl: {modl.val1}")
+
+test_bind()
 # test_val1()

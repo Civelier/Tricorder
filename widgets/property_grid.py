@@ -21,6 +21,7 @@ class NewprojectWidget(ttk.Frame):
         self.scroll.pack(side="top")
         self.configure(height=200, width=200)
         self.pack(side="top")
+        
 
 if __name__ == "__main__":
     root = tk.Tk()
